@@ -1,0 +1,10 @@
+{
+  "name": "yuwen-sync",
+  "version": "2.0.0",
+  "description": "博瑞语文云同步后端 - Vercel 版",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vercel/kv": "^2.0.0"
+  }
+}
