@@ -4,6 +4,7 @@
     { "source": "/health", "destination": "/api/index" },
     { "source": "/register", "destination": "/api/index" },
     { "source": "/login", "destination": "/api/index" },
+    { "source": "/changePassword", "destination": "/api/index" },
     { "source": "/sync", "destination": "/api/index" },
     { "source": "/load", "destination": "/api/index" },
     { "source": "/admin/login", "destination": "/api/index" },
