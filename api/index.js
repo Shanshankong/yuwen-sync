@@ -18,8 +18,9 @@ function hmac(s) {
   return crypto.createHmac('sha256', SECRET).update(String(s)).digest('hex');
 }
 
+// Token: 简单自签名 token,格式 "<username>.<expireMs>.<sig>"
 function makeToken(username) {
-  const exp = Date.now() + 90 * 24 * 60 * 60 * 1000;
+  const exp = Date.now() + 90 * 24 * 60 * 60 * 1000; // 90 天有效期
   const payload = `${username}.${exp}`;
   return `${payload}.${hmac(payload)}`;
 }
@@ -35,7 +36,7 @@ function verifyToken(token) {
 }
 
 function makeAdminToken() {
-  const exp = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  const exp = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 天
   const payload = `admin.${exp}`;
   return `${payload}.${hmac(payload)}`;
 }
@@ -140,6 +141,26 @@ async function login(req, res) {
       paidAt: user.paidAt,
     },
   });
+}
+
+async function changePassword(req, res) {
+  const body = await readBody(req);
+  const { username, oldPassword, newPassword } = body || {};
+  if (!username || !oldPassword || !newPassword) {
+    return res.status(400).json({ error: '参数缺失' });
+  }
+  if (!validPassword(newPassword)) {
+    return res.status(400).json({ error: '新密码至少 4 位' });
+  }
+  const user = await kv.get(`user:${username}`);
+  if (!user) return res.status(400).json({ error: '账号不存在' });
+  if (user.passHash !== sha256(oldPassword + ':' + SECRET)) {
+    return res.status(400).json({ error: '原密码错误' });
+  }
+  user.passHash = sha256(newPassword + ':' + SECRET);
+  user.passwordChangedAt = Date.now();
+  await kv.set(`user:${username}`, user);
+  return res.status(200).json({ ok: true });
 }
 
 function authFromReq(req) {
@@ -266,18 +287,21 @@ async function adminSetNote(req, res) {
 // ============== 主路由器 ==============
 
 export default async function handler(req, res) {
+  // CORS - 允许任何来源调用(应用从 file:// 或任何域打开都能用)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Token');
   res.setHeader('Access-Control-Max-Age', '86400');
   if (req.method === 'OPTIONS') return res.status(204).end();
 
+  // 解析路径(去掉 query string)
   const path = (req.url || '/').split('?')[0].replace(/\/$/, '') || '/';
 
   try {
     if (path === '/' || path === '/health') return await health(req, res);
     if (path === '/register' && req.method === 'POST') return await register(req, res);
     if (path === '/login' && req.method === 'POST') return await login(req, res);
+    if (path === '/changePassword' && req.method === 'POST') return await changePassword(req, res);
     if (path === '/sync' && req.method === 'POST') return await sync(req, res);
     if (path === '/load') return await load(req, res);
 
