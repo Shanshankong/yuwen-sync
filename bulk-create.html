@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VIP 账号批量创建</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,system-ui,sans-serif;background:linear-gradient(135deg,#0a0e1a,#1a0f2e);color:#fff;min-height:100vh;margin:0;padding:16px;line-height:1.6}
+.wrap{max-width:560px;margin:0 auto}
+h1{font-size:20px;margin:8px 0 4px}
+.sub{color:#a0a8c0;font-size:13px;margin-bottom:18px}
+.card{background:rgba(255,255,255,0.05);border-radius:14px;padding:16px;margin:12px 0;border:1px solid rgba(255,255,255,0.1)}
+h2{font-size:15px;color:#a855f7;margin:0 0 10px}
+label{font-size:12px;color:#a0a8c0;display:block;margin-bottom:4px}
+input{width:100%;padding:11px 13px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:9px;font-size:14px;font-family:inherit;outline:none;margin-bottom:12px}
+button{width:100%;padding:14px;background:linear-gradient(135deg,#22c55e,#10b981);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;margin:4px 0}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.2);color:#a0a8c0;font-weight:500}
+.progress{background:rgba(0,0,0,0.3);border-radius:8px;padding:8px 12px;font-size:12px;color:#a0a8c0;margin-top:10px;min-height:32px;line-height:1.6}
+.ok{color:#22c55e}
+.err{color:#ef4444}
+.warn{color:#fbbf24}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.06)}
+td:nth-child(1){color:#a855f7;font-weight:700;width:25%}
+td:nth-child(2){font-family:'SF Mono',Menlo,monospace;color:#fff}
+td:nth-child(3){font-size:11px;width:18%;text-align:right}
+.copybtn{padding:5px 10px;font-size:11px;background:rgba(168,85,247,0.15);color:#a855f7;border:1px solid #a855f7;border-radius:5px;cursor:pointer;width:auto}
+.tip{background:rgba(59,130,246,0.08);border-left:3px solid #3b82f6;padding:10px 12px;border-radius:6px;font-size:12px;line-height:1.6;margin:10px 0}
+.copy-all{background:linear-gradient(135deg,#a855f7,#8b5cf6);margin-top:14px}
+hr{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:14px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>🎁 VIP 账号批量创建</h1>
+<div class="sub">一键生成 30 个 VIP 试用账号(全 36 天免费体验)</div>
+
+<div class="card">
+<h2>① 后端配置</h2>
+<label>后端 URL</label>
+<input id="backend" value="https://yuwen-sync.vercel.app">
+<label>管理员密码(部署时设的 ADMIN_PASSWORD)</label>
+<input id="adminPwd" type="password" placeholder="11 位密码">
+<button onclick="testAuth()">验证管理员权限</button>
+<div class="progress" id="auth-progress">未验证</div>
+</div>
+
+<div class="card" id="step2" style="display:none">
+<h2>② 一键创建 30 个 VIP 账号</h2>
+<div class="tip">
+  📋 即将创建: <b>vip01 ~ vip30</b><br>
+  🔑 每个账号自动设为 <b>付费用户(全 36 天解锁)</b><br>
+  ⏱️ 预计耗时 1-2 分钟(每个账号 ≈ 2-3 秒)<br>
+  ⚠️ 已存在的账号会自动跳过,只升级为 VIP
+</div>
+<button onclick="runBulk()" id="run-btn">🚀 开始批量创建</button>
+<div class="progress" id="run-progress">点上面按钮开始</div>
+</div>
+
+<div class="card" id="step3" style="display:none">
+<h2>③ 账号清单(创建完成)</h2>
+<button class="copy-all" onclick="copyAll()">📋 一键复制全部清单(可直接发微信)</button>
+<table id="result-table"></table>
+</div>
+
+<div class="card">
+<h2>📖 使用说明</h2>
+<div class="tip">
+  <b>怎么送朋友?</b><br>
+  1. 验证管理员权限 → 点"开始批量创建"<br>
+  2. 创建完成后,点"一键复制全部清单"<br>
+  3. 给朋友发微信:<br>
+  &nbsp;&nbsp;"博瑞语文 36 天闯关,VIP 体验账号送给你:<br>
+  &nbsp;&nbsp;链接:yuwen-sync.vercel.app/yuwen.html<br>
+  &nbsp;&nbsp;账号:vip05 密码:xxxxxx<br>
+  &nbsp;&nbsp;登录后可在【☁️ 数据】里改密码"<br>
+  4. 朋友打开链接 → 点"已有账号 登录" → 输账号密码 → 36 天全解锁
+</div>
+</div>
+
+</div>
+
+<script>
+const ACCOUNTS = [
+  {username: 'vip01', password: 'NbspTQ'},
+  {username: 'vip02', password: '4eAbpE'},
+  {username: 'vip03', password: 'bmNGpK'},
+  {username: 'vip04', password: 'XaXRvj'},
+  {username: 'vip05', password: '7vffZL'},
+  {username: 'vip06', password: 'XTG8xH'},
+  {username: 'vip07', password: 'YM2JRc'},
+  {username: 'vip08', password: 'psepfs'},
+  {username: 'vip09', password: 'Mxxnr6'},
+  {username: 'vip10', password: 'NLkTjx'},
+  {username: 'vip11', password: '9NHQZV'},
+  {username: 'vip12', password: 'pburn6'},
+  {username: 'vip13', password: '3uPy5C'},
+  {username: 'vip14', password: 'rqHrK4'},
+  {username: 'vip15', password: 'yp9Ffc'},
+  {username: 'vip16', password: 'gMWAdx'},
+  {username: 'vip17', password: '9G82aS'},
+  {username: 'vip18', password: 'QGrNgA'},
+  {username: 'vip19', password: 'B73rEk'},
+  {username: 'vip20', password: '52tNLj'},
+  {username: 'vip21', password: 'UGVGau'},
+  {username: 'vip22', password: 'b63Ytd'},
+  {username: 'vip23', password: '37eDdU'},
+  {username: 'vip24', password: 'VhDHr2'},
+  {username: 'vip25', password: 'AnGTnu'},
+  {username: 'vip26', password: '9NBFgp'},
+  {username: 'vip27', password: 'vKppdM'},
+  {username: 'vip28', password: 'p42dqP'},
+  {username: 'vip29', password: 'nh6JCW'},
+  {username: 'vip30', password: 'XmfAAC'},
+];
+
+let adminToken = null;
+const results = [];
+
+function getBase() {
+  return document.getElementById('backend').value.trim().replace(/\/$/, '');
+}
+
+async function testAuth() {
+  const out = document.getElementById('auth-progress');
+  const pwd = document.getElementById('adminPwd').value;
+  if (!pwd) { out.innerHTML = '<span class="err">⚠️ 请输入管理员密码</span>'; return; }
+  out.innerHTML = '⏳ 验证中...';
+  try {
+    const res = await fetch(getBase() + '/admin/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({password: pwd}),
+    });
+    const j = await res.json();
+    if (!res.ok || !j.token) {
+      out.innerHTML = '<span class="err">❌ ' + (j.error || '验证失败') + '</span>';
+      return;
+    }
+    adminToken = j.token;
+    out.innerHTML = '<span class="ok">✅ 管理员验证成功</span>';
+    document.getElementById('step2').style.display = 'block';
+  } catch (e) {
+    out.innerHTML = '<span class="err">❌ ' + e.message + '</span>';
+  }
+}
+
+async function tryRegister(username, password) {
+  const res = await fetch(getBase() + '/register', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username, password}),
+  });
+  const j = await res.json();
+  return {ok: res.ok, status: res.status, data: j};
+}
+
+async function grantPaid(username) {
+  const res = await fetch(getBase() + '/admin/grant', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-Admin-Token': adminToken},
+    body: JSON.stringify({username, note: 'VIP 赠送账号'}),
+  });
+  const j = await res.json();
+  return {ok: res.ok, status: res.status, data: j};
+}
+
+async function runBulk() {
+  const btn = document.getElementById('run-btn');
+  const prog = document.getElementById('run-progress');
+  btn.disabled = true;
+  btn.textContent = '⏳ 创建中...';
+  results.length = 0;
+
+  for (let i = 0; i < ACCOUNTS.length; i++) {
+    const {username, password} = ACCOUNTS[i];
+    prog.innerHTML = `⏳ 处理 ${i+1}/30: ${username} ...`;
+
+    // 1. 注册 (如已存在会失败,但能用)
+    let regResult;
+    try {
+      regResult = await tryRegister(username, password);
+    } catch (e) {
+      results.push({username, password, status: 'error', msg: '注册失败: ' + e.message});
+      continue;
+    }
+    const exists = regResult.data && (
+      (regResult.data.error && (regResult.data.error.includes('已被') || regResult.data.error.includes('存在')))
+    );
+
+    // 2. 升级为付费用户
+    try {
+      const gr = await grantPaid(username);
+      if (gr.ok) {
+        results.push({username, password, status: regResult.ok ? 'new' : (exists ? 'exists' : 'mixed'), msg: regResult.ok ? '新建+VIP' : 'VIP 已激活'});
+      } else {
+        results.push({username, password, status: 'grant-failed', msg: '开通 VIP 失败: ' + (gr.data.error || gr.status)});
+      }
+    } catch (e) {
+      results.push({username, password, status: 'error', msg: '开通失败: ' + e.message});
+    }
+
+    renderResults();
+    // 速率限制保护:每个账号间隔 300ms
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  prog.innerHTML = '<span class="ok">✅ 全部完成!向下滚动看清单</span>';
+  btn.textContent = '✅ 已完成 (可重复运行)';
+  btn.disabled = false;
+  document.getElementById('step3').style.display = 'block';
+  document.getElementById('step3').scrollIntoView({behavior: 'smooth'});
+}
+
+function renderResults() {
+  const tbl = document.getElementById('result-table');
+  let html = '<tr style="color:#a0a8c0;font-size:11px"><td>账号</td><td>密码</td><td>状态</td></tr>';
+  for (const r of results) {
+    let statusHtml = '';
+    if (r.status === 'new') statusHtml = '<span class="ok">✅ 新建</span>';
+    else if (r.status === 'exists') statusHtml = '<span class="ok">✅ 已激活</span>';
+    else if (r.status === 'mixed') statusHtml = '<span class="ok">✅ VIP 已开</span>';
+    else statusHtml = '<span class="err">❌</span>';
+    html += `<tr><td>${r.username}</td><td>${r.password}</td><td>${statusHtml}</td></tr>`;
+  }
+  tbl.innerHTML = html;
+}
+
+function copyAll() {
+  const lines = ['博瑞语文 · 36 天闯关 · VIP 体验账号', '链接:https://yuwen-sync.vercel.app/yuwen.html', ''];
+  for (const r of results) {
+    if (r.status === 'new' || r.status === 'exists' || r.status === 'mixed') {
+      lines.push(`${r.username}  /  ${r.password}`);
+    }
+  }
+  lines.push('', '登录后可在【☁️ 数据】→【🔑 修改密码】里改密码');
+  const text = lines.join('\n');
+
+  // iOS Safari 兼容的复制方式
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    alert('✅ 已复制!现在去微信里粘贴发给朋友吧');
+  } catch (e) {
+    alert('复制失败,请长按下面的文字手动复制:\n\n' + text);
+  }
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>
