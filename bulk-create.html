@@ -136,11 +136,11 @@ async function testAuth() {
       body: JSON.stringify({password: pwd}),
     });
     const j = await res.json();
-    if (!res.ok || !j.token) {
+    if (!res.ok || !j.adminToken) {
       out.innerHTML = '<span class="err">❌ ' + (j.error || '验证失败') + '</span>';
       return;
     }
-    adminToken = j.token;
+    adminToken = j.adminToken;
     out.innerHTML = '<span class="ok">✅ 管理员验证成功</span>';
     document.getElementById('step2').style.display = 'block';
   } catch (e) {
