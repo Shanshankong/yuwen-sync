@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/health", "destination": "/api/index" },
+    { "source": "/register", "destination": "/api/index" },
+    { "source": "/login", "destination": "/api/index" },
+    { "source": "/changePassword", "destination": "/api/index" },
+    { "source": "/sync", "destination": "/api/index" },
+    { "source": "/load", "destination": "/api/index" },
+    { "source": "/boost", "destination": "/api/index" },
+    { "source": "/boost/status", "destination": "/api/index" },
+    { "source": "/admin/login", "destination": "/api/index" },
+    { "source": "/admin/list", "destination": "/api/index" },
+    { "source": "/admin/grant", "destination": "/api/index" },
+    { "source": "/admin/revoke", "destination": "/api/index" },
+    { "source": "/admin/setNote", "destination": "/api/index" },
+    { "source": "/admin/boost/list", "destination": "/api/index" },
+    { "source": "/admin/boost/revoke", "destination": "/api/index" }
+  ]
+}
