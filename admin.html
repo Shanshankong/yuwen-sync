@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>提分语文 · 管理后台</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg2: #131826;
+  --bg3: #1c2237;
+  --line: rgba(255,255,255,0.08);
+  --text: #f0f4ff;
+  --dim: #8993a8;
+  --accent: #64ffda;
+  --success: #4ade80;
+  --warning: #ffb400;
+  --danger: #ff7b54;
+  --purple: #c77dff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.app { max-width: 1100px; margin: 0 auto; padding: 20px; }
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+h1 { margin: 0 0 6px; font-size: 22px; }
+h2 { margin: 0 0 12px; font-size: 16px; color: var(--accent); }
+.subtitle { color: var(--dim); font-size: 12px; margin-bottom: 14px; }
+label { display: block; color: var(--dim); font-size: 12px; margin: 10px 0 4px; }
+input[type="text"], input[type="password"] {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+input:focus { border-color: var(--accent); }
+button {
+  padding: 10px 16px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+}
+button:hover { opacity: 0.9; }
+button.secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--line); }
+button.warning { background: var(--warning); color: var(--bg); }
+button.danger { background: var(--danger); color: white; }
+button.small { padding: 5px 10px; font-size: 11px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+th { color: var(--dim); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge.free { background: rgba(137,147,168,0.15); color: var(--dim); }
+.badge.paid { background: rgba(74,222,128,0.15); color: var(--success); }
+.badge.boost7 { background: rgba(255,180,0,0.15); color: var(--warning); }
+.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.toolbar input { flex: 1; min-width: 200px; }
+.stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.stat {
+  background: var(--bg3);
+  padding: 14px 18px;
+  border-radius: 10px;
+  border-left: 3px solid var(--accent);
+  flex: 1;
+  min-width: 140px;
+}
+.stat-num { font-size: 24px; font-weight: 700; color: var(--accent); }
+.stat-num.paid { color: var(--success); }
+.stat-num.free { color: var(--warning); }
+.stat-label { font-size: 11px; color: var(--dim); }
+.note-cell {
+  font-size: 11px;
+  color: var(--dim);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.error {
+  background: rgba(255,123,84,0.1);
+  border-left: 3px solid var(--danger);
+  padding: 10px 14px;
+  border-radius: 6px;
+  color: var(--danger);
+  font-size: 12px;
+  margin-top: 10px;
+}
+.time-cell {
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.time-cell .time-rel {
+  display: block;
+  color: var(--dim);
+  font-size: 10px;
+  margin-top: 2px;
+}
+tr.deleted-row { opacity: 0.45; }
+tr.deleted-row td { background: rgba(255,123,84,0.05); }
+@media (max-width: 600px) {
+  .card { padding: 14px; }
+  th, td { padding: 8px 4px; font-size: 11px; }
+  .actions button { padding: 4px 6px; font-size: 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="card">
+    <h1>📊 提分语文 · 管理后台</h1>
+    <div class="subtitle">用户账号 / 付费状态 / 一键开通 / 注册时间排序</div>
+  </div>
+
+  <!-- 配置 -->
+  <div class="card" id="config-section">
+    <h2>⚙️ 后台配置</h2>
+    <label>Worker URL(同应用里那个,例如 https://tifenyuwen.com)</label>
+    <input type="text" id="workerURL" placeholder="https://tifenyuwen.com" value="https://tifenyuwen.com">
+    <label>管理员密码(Worker 的 ADMIN_PASSWORD secret)</label>
+    <input type="password" id="adminPassword" placeholder="部署时设置的密码">
+    <div style="margin-top: 14px">
+      <button onclick="adminLogin()">登录</button>
+      <button class="secondary" onclick="logout()">登出</button>
+      <button class="secondary" onclick="loadUsers()">刷新用户列表</button>
+    </div>
+    <div id="login-error"></div>
+  </div>
+
+  <!-- 统计 -->
+  <div class="card" id="stats-section" style="display:none">
+    <h2>📈 数据概览</h2>
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">总注册账号</div></div>
+      <div class="stat"><div class="stat-num paid" id="stat-paid">0</div><div class="stat-label">付费用户</div></div>
+      <div class="stat"><div class="stat-num" style="color:#ffb400" id="stat-boost7">0</div><div class="stat-label">助力解锁 Day1-7</div></div>
+      <div class="stat"><div class="stat-num free" id="stat-free">0</div><div class="stat-label">免费试用</div></div>
+      <div class="stat"><div class="stat-num" id="stat-today">0</div><div class="stat-label">今天新注册</div></div>
+      <div class="stat"><div class="stat-num" style="color:#c77dff" id="stat-totalboosts">0</div><div class="stat-label">累计助力次数</div></div>
+    </div>
+  </div>
+
+  <!-- 用户列表 -->
+  <div class="card" id="users-section" style="display:none">
+    <h2>👥 用户列表 <span style="font-size:11px;color:var(--dim);font-weight:400">(按注册时间倒序 · 最新注册在最上面)</span></h2>
+    <div class="toolbar" style="margin-bottom: 14px">
+      <input type="text" id="search" placeholder="搜索账号名 / 备注..." oninput="renderUsers()">
+      <button class="secondary" onclick="setFilter('all')" id="btn-all">全部</button>
+      <button class="secondary" onclick="setFilter('paid')" id="btn-paid">仅付费</button>
+      <button class="secondary" onclick="setFilter('free')" id="btn-free">仅试用</button>
+      <button class="secondary" onclick="toggleDeleted()" id="btn-deleted">显示已删除</button>
+    </div>
+    <div style="overflow-x: auto">
+      <table id="user-table">
+        <thead>
+          <tr>
+            <th>账号</th>
+            <th>状态</th>
+            <th>注册时间</th>
+            <th>付费日</th>
+            <th>助力</th>
+            <th>备注</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="user-tbody"></tbody>
+      </table>
+    </div>
+    <div id="users-error"></div>
+  </div>
+
+  <div class="card">
+    <h2>💡 使用说明</h2>
+    <div style="color: var(--dim); font-size: 12px; line-height: 1.8">
+      <b style="color: var(--text)">1. 别人怎么用?</b> 他打开应用 → 注册账号(默认 free) → 试 Day 1 + 任选 3 天<br>
+      <b style="color: var(--text)">2. 别人付款后?</b> 他把账号名发给你 → 你在这里搜账号 → 点【开通付费】 → 他下次同步立即解锁<br>
+      <b style="color: var(--text)">3. 想清理测试账号?</b> 点【删除】按钮,账号会被标记为已删除并从列表隐藏。<br>
+      <b style="color: var(--text)">4. 删错了想恢复?</b> 点右上角【显示已删除】查看,再点【恢复】<br>
+      <b style="color: var(--text)">5. 备注怎么用?</b> 记付款方式 / 金额 / 来源 / 优惠码,以后对账方便<br>
+      <b style="color: var(--text)">6. 安全提醒:</b> Worker URL 和管理员密码会暂存在本设备浏览器,公共电脑用完记得登出
+    </div>
+  </div>
+</div>
+
+<script>
+const URL_KEY = 'admin_worker_url';
+const PWD_KEY = 'admin_password_session';
+const TOKEN_KEY = 'admin_token';
+// 软删除标记前缀:写到 note 字段开头
+const DELETE_MARK = '__DELETED__';
+
+let allUsers = [];
+let filterMode = 'all';
+let showDeleted = false;
+
+// 从 localStorage 恢复
+document.getElementById('workerURL').value = localStorage.getItem(URL_KEY) || '';
+document.getElementById('adminPassword').value = sessionStorage.getItem(PWD_KEY) || '';
+// 启动时如果已有 token 直接加载
+if (localStorage.getItem(URL_KEY) && localStorage.getItem(TOKEN_KEY)) {
+  loadUsers();
+}
+
+function getURL() {
+  return (document.getElementById('workerURL').value || '').trim().replace(/\/$/, '');
+}
+
+function showErr(id, msg) {
+  document.getElementById(id).innerHTML = msg ? `<div class="error">${escapeHtml(msg)}</div>` : '';
+}
+
+async function adminLogin() {
+  const url = getURL();
+  const pwd = document.getElementById('adminPassword').value;
+  if (!url || !pwd) { showErr('login-error', '请填写 Worker URL 和管理员密码'); return; }
+  
+  showErr('login-error', '');
+  try {
+    const res = await fetch(url + '/admin/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({password: pwd}),
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.error || '登录失败');
+    localStorage.setItem(URL_KEY, url);
+    sessionStorage.setItem(PWD_KEY, pwd);
+    localStorage.setItem(TOKEN_KEY, j.adminToken);
+    await loadUsers();
+  } catch (e) {
+    showErr('login-error', e.message);
+  }
+}
+
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(PWD_KEY);
+  document.getElementById('adminPassword').value = '';
+  document.getElementById('stats-section').style.display = 'none';
+  document.getElementById('users-section').style.display = 'none';
+  showErr('login-error', '已登出');
+}
+
+async function loadUsers() {
+  const url = getURL();
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!url || !token) { showErr('login-error', '请先登录'); return; }
+  
+  try {
+    const res = await fetch(url + '/admin/list', {
+      headers: {'X-Admin-Token': token},
+    });
+    const j = await res.json();
+    if (!res.ok) {
+      if (res.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        showErr('login-error', '登录已过期,请重新登录');
+        document.getElementById('stats-section').style.display = 'none';
+        document.getElementById('users-section').style.display = 'none';
+        return;
+      }
+      throw new Error(j.error || '加载失败');
+    }
+    allUsers = j.users || [];
+    // 按注册时间倒序排:最新的在最上面
+    allUsers.sort(function(a, b) {
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    document.getElementById('stats-section').style.display = '';
+    document.getElementById('users-section').style.display = '';
+    updateStats();
+    renderUsers();
+    showErr('login-error', '');
+  } catch (e) {
+    showErr('login-error', e.message);
+  }
+}
+
+// 判断是否已"删除"
+function isDeleted(u) {
+  return (u.note || '').indexOf(DELETE_MARK) === 0;
+}
+
+// 获取显示用的备注(去掉删除标记前缀)
+function displayNote(u) {
+  const n = u.note || '';
+  if (n.indexOf(DELETE_MARK) === 0) {
+    return n.slice(DELETE_MARK.length).trim() || '(已删除)';
+  }
+  return n;
+}
+
+function updateStats() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayTs = today.getTime();
+  // 统计只看未删除的
+  const active = allUsers.filter(u => !isDeleted(u));
+  const paid = active.filter(u => u.plan === 'paid').length;
+  const free = active.filter(u => u.plan === 'free').length;
+  const boost7 = active.filter(u => u.plan === 'boost7').length;
+  const todayNew = active.filter(u => (u.createdAt || 0) >= todayTs).length;
+  const totalBoosts = active.reduce((sum, u) => sum + (u.boostCount || 0), 0);
+  
+  document.getElementById('stat-total').textContent = active.length;
+  document.getElementById('stat-paid').textContent = paid;
+  document.getElementById('stat-boost7').textContent = boost7;
+  document.getElementById('stat-free').textContent = free;
+  document.getElementById('stat-today').textContent = todayNew;
+  document.getElementById('stat-totalboosts').textContent = totalBoosts;
+}
+
+function setFilter(mode) {
+  filterMode = mode;
+  renderUsers();
+}
+
+function toggleDeleted() {
+  showDeleted = !showDeleted;
+  const btn = document.getElementById('btn-deleted');
+  btn.textContent = showDeleted ? '隐藏已删除' : '显示已删除';
+  btn.style.background = showDeleted ? 'var(--danger)' : '';
+  btn.style.color = showDeleted ? 'white' : '';
+  renderUsers();
+}
+
+function renderUsers() {
+  const search = document.getElementById('search').value.toLowerCase().trim();
+  let list = allUsers;
+  
+  // 默认隐藏已删除的;勾选"显示已删除"则只显示已删除的
+  if (showDeleted) {
+    list = list.filter(u => isDeleted(u));
+  } else {
+    list = list.filter(u => !isDeleted(u));
+  }
+  
+  if (filterMode === 'paid') list = list.filter(u => u.plan === 'paid');
+  if (filterMode === 'free') list = list.filter(u => u.plan === 'free');
+  if (search) {
+    list = list.filter(u =>
+      (u.username || '').toLowerCase().includes(search) ||
+      displayNote(u).toLowerCase().includes(search)
+    );
+  }
+  
+  const tbody = document.getElementById('user-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--dim);padding:30px">没有符合条件的用户</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = list.map(u => {
+    const deleted = isDeleted(u);
+    const note = displayNote(u);
+    const bc = u.boostCount || 0;
+    // plan 标签:paid / boost7 / free
+    const planLabel = u.plan === 'paid' ? '<span class="badge paid">✓ 全开</span>'
+                    : u.plan === 'boost7' ? '<span class="badge boost7">🎁 助力7天</span>'
+                    : '<span class="badge free">🎁 试用</span>';
+    // 助力列:数字 + 状态色
+    const boostBadge = bc >= 5 ? `<span style="color:#4ade80;font-weight:700">${bc}/5 ✓</span>`
+                     : bc >= 3 ? `<span style="color:#ffb400;font-weight:700">${bc}/5</span>`
+                     : bc > 0  ? `<span style="color:#8993a8">${bc}/5</span>`
+                     : `<span style="color:#666">0</span>`;
+    return `
+    <tr class="${deleted ? 'deleted-row' : ''}">
+      <td><b>${escapeHtml(u.username)}</b>${deleted ? ' <span style="color:var(--danger);font-size:10px">🗑️ 已删除</span>' : ''}</td>
+      <td>${planLabel}</td>
+      <td class="time-cell">${fmtDate(u.createdAt)}<span class="time-rel">${fmtRel(u.createdAt)}</span></td>
+      <td style="font-size:11px;color:var(--dim)">${u.paidAt ? fmtDate(u.paidAt) : '—'}</td>
+      <td style="text-align:center">${boostBadge}${bc > 0 ? `<br><button class="secondary small" style="margin-top:4px;padding:2px 6px;font-size:10px" onclick="showBoostDetail('${escapeJs(u.username)}')">查看明细</button>` : ''}</td>
+      <td class="note-cell" title="${escapeHtml(note)}">${escapeHtml(note || '—')}</td>
+      <td><div class="actions">
+        ${deleted
+          ? `<button class="warning small" onclick="restoreUser('${escapeJs(u.username)}')">恢复</button>`
+          : (u.plan === 'paid'
+              ? `<button class="secondary small" onclick="revokeUser('${escapeJs(u.username)}')">取消付费</button>`
+              : `<button class="warning small" onclick="grantUser('${escapeJs(u.username)}')">开通付费</button>`
+            )
+        }
+        ${!deleted ? `<button class="secondary small" onclick="editNote('${escapeJs(u.username)}')">备注</button>` : ''}
+        ${!deleted ? `<button class="danger small" onclick="deleteUser('${escapeJs(u.username)}')">删除</button>` : ''}
+      </div></td>
+    </tr>
+    `;
+  }).join('');
+}
+
+async function grantUser(username) {
+  const note = prompt(`给 [${username}] 开通付费\n\n顺便记个备注吧(可不填),比如:\n  微信收款 19元 2026-05-14\n  朋友介绍 免费`, '');
+  if (note === null) return;
+  
+  try {
+    await adminAPI('/admin/grant', {username, plan: 'paid', note});
+    alert('✅ 已为 ' + username + ' 开通付费\n下次他打开应用会自动解锁全部 36 天');
+    await loadUsers();
+  } catch (e) {
+    alert('❌ 开通失败: ' + e.message);
+  }
+}
+
+async function revokeUser(username) {
+  if (!confirm(`确定取消 [${username}] 的付费状态?\n他下次同步后将回到试用状态(只能用 Day1 + 任选 3 天)。`)) return;
+  try {
+    await adminAPI('/admin/revoke', {username});
+    alert('已取消');
+    await loadUsers();
+  } catch (e) {
+    alert('❌ 取消失败: ' + e.message);
+  }
+}
+
+async function editNote(username) {
+  const u = allUsers.find(x => x.username === username);
+  const newNote = prompt(`修改 [${username}] 的备注:`, u ? displayNote(u) : '');
+  if (newNote === null) return;
+  try {
+    // 保留删除标记(理论上 editNote 只对未删除的开放,但稳一手)
+    const finalNote = isDeleted(u) ? DELETE_MARK + newNote : newNote;
+    await adminAPI('/admin/setNote', {username, note: finalNote});
+    await loadUsers();
+  } catch (e) {
+    alert('❌ 修改失败: ' + e.message);
+  }
+}
+
+// 软删除:在备注开头加 __DELETED__ 标记,前端默认过滤掉
+async function deleteUser(username) {
+  if (!confirm(`确定删除 [${username}] 吗?\n\n注:这是"软删除",数据库里还在,只是从列表隐藏。\n点【显示已删除】可以恢复。\n\n用户本人会继续看到自己的账号能登录(因为后端数据未删)。`)) return;
+  try {
+    const u = allUsers.find(x => x.username === username);
+    const origNote = u ? displayNote(u) : '';
+    const ts = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    const finalNote = DELETE_MARK + `[${ts}删除] ` + origNote;
+    await adminAPI('/admin/setNote', {username, note: finalNote});
+    await loadUsers();
+  } catch (e) {
+    alert('❌ 删除失败: ' + e.message);
+  }
+}
+
+async function restoreUser(username) {
+  if (!confirm(`恢复 [${username}] 到正常状态?`)) return;
+  try {
+    const u = allUsers.find(x => x.username === username);
+    if (!u) return;
+    // 去掉删除标记和"[XXX删除]"前缀
+    let n = (u.note || '').replace(DELETE_MARK, '').trim();
+    n = n.replace(/^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}删除\]\s*/, '');
+    await adminAPI('/admin/setNote', {username, note: n});
+    await loadUsers();
+  } catch (e) {
+    alert('❌ 恢复失败: ' + e.message);
+  }
+}
+
+async function adminAPI(path, body) {
+  const url = getURL();
+  const token = localStorage.getItem(TOKEN_KEY);
+  const res = await fetch(url + path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Admin-Token': token,
+    },
+    body: JSON.stringify(body),
+  });
+  const j = await res.json();
+  if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem(TOKEN_KEY);
+      throw new Error('登录过期,请重新登录');
+    }
+    throw new Error(j.error || '请求失败');
+  }
+  return j;
+}
+
+// ============ 助力审核 ============
+// 弹窗显示某用户的助力明细
+async function showBoostDetail(username) {
+  // 先显示加载中的弹窗
+  const old = document.getElementById('boost-detail-modal');
+  if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'boost-detail-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:flex-start;justify-content:center;z-index:99999;padding:20px;overflow-y:auto';
+  m.innerHTML = `
+    <div style="background:var(--bg2);border-radius:14px;padding:24px;max-width:680px;width:100%;border:1px solid var(--line);max-height:90vh;overflow-y:auto;margin:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="margin:0;color:var(--accent);font-size:18px">🔍 助力明细 · ${escapeHtml(username)}</h2>
+        <button class="secondary small" onclick="document.getElementById('boost-detail-modal').remove()">关闭</button>
+      </div>
+      <div id="boost-detail-content" style="color:var(--dim);text-align:center;padding:40px">⏳ 加载中...</div>
+    </div>
+  `;
+  m.onclick = function(e) { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+  
+  try {
+    const url = getURL();
+    const token = localStorage.getItem(TOKEN_KEY);
+    const res = await fetch(url + '/admin/boost/list?username=' + encodeURIComponent(username), {
+      headers: {'X-Admin-Token': token},
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.error || '加载失败');
+    
+    const list = j.list || [];
+    const total = j.boostCount || 0;
+    const plan = j.plan || 'free';
+    
+    let html = `
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:13px;color:var(--text)">收到助力 <b style="color:var(--success);font-size:18px">${total}</b> 次 · 当前 plan: <b>${plan}</b></div>
+        <div style="font-size:11px;color:var(--dim);margin-top:6px">3 次解锁 Day 1-7 · 5 次解锁全部 36 天</div>
+      </div>
+    `;
+    
+    if (list.length === 0) {
+      html += '<div style="text-align:center;color:var(--dim);padding:30px">还没有助力记录</div>';
+    } else {
+      html += `
+        <div style="font-size:11px;color:var(--dim);margin-bottom:8px">⚠️ 如果发现可疑助力(短时间内同 IP/UA 等),可以【取消】这条助力,用户的 boostCount 会自动 -1。如果 plan 因此降级也会自动调整。</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);color:var(--dim);font-size:11px">时间</th>
+              <th style="text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);color:var(--dim);font-size:11px">IP</th>
+              <th style="text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);color:var(--dim);font-size:11px">设备指纹</th>
+              <th style="text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);color:var(--dim);font-size:11px">浏览器</th>
+              <th style="text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);color:var(--dim);font-size:11px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      // 按时间倒序(最新的在最上面)
+      list.sort((a, b) => (b.at || 0) - (a.at || 0));
+      list.forEach((item, idx) => {
+        const fpShort = (item.fingerprint || '').slice(0, 12);
+        const uaShort = (item.ua || '').match(/(iPhone|iPad|Android|Macintosh|Windows|Linux)/i);
+        const uaLabel = uaShort ? uaShort[0] : (item.ua || '').slice(0, 30) + '...';
+        html += `
+          <tr>
+            <td style="padding:8px 6px;border-bottom:1px solid var(--line);font-size:11px">${fmtDate(item.at)}<br><span style="color:var(--dim);font-size:10px">${fmtRel(item.at)}</span></td>
+            <td style="padding:8px 6px;border-bottom:1px solid var(--line);font-family:monospace;font-size:11px;color:var(--text)">${escapeHtml(item.ip || '—')}</td>
+            <td style="padding:8px 6px;border-bottom:1px solid var(--line);font-family:monospace;font-size:11px;color:var(--dim)">${escapeHtml(fpShort)}...</td>
+            <td style="padding:8px 6px;border-bottom:1px solid var(--line);font-size:11px;color:var(--dim)">${escapeHtml(uaLabel)}</td>
+            <td style="padding:8px 6px;border-bottom:1px solid var(--line)">
+              <button class="danger small" onclick="revokeBoost('${escapeJs(username)}','${escapeJs(item.fingerprint)}')">取消</button>
+            </td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+    }
+    
+    document.getElementById('boost-detail-content').innerHTML = html;
+  } catch (e) {
+    document.getElementById('boost-detail-content').innerHTML = '<div class="error">' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+// 取消一条助力(防作弊用)
+async function revokeBoost(username, fingerprint) {
+  if (!confirm(`确定取消这条助力吗?\n\n用户 [${username}] 的 boostCount 会 -1。\n如果当前 plan 是因这次助力解锁的(boost7 / 全开),会自动降级。\n\n此操作不可撤销(但可以让朋友再点一次重新助力)。`)) return;
+  try {
+    await adminAPI('/admin/boost/revoke', {username, fingerprint});
+    alert('✅ 已取消');
+    // 刷新明细 + 用户列表
+    showBoostDetail(username);
+    await loadUsers();
+  } catch (e) {
+    alert('❌ 取消失败: ' + e.message);
+  }
+}
+
+function fmtDate(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleString('zh-CN', {month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
+}
+
+// 相对时间:"刚刚 / 5 分钟前 / 2 小时前 / 3 天前"
+function fmtRel(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - ts;
+  if (diff < 0) return '';
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return '刚刚';
+  if (min < 60) return min + ' 分钟前';
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return hr + ' 小时前';
+  const day = Math.floor(hr / 24);
+  if (day < 30) return day + ' 天前';
+  const mo = Math.floor(day / 30);
+  if (mo < 12) return mo + ' 个月前';
+  return Math.floor(mo / 12) + ' 年前';
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+
+function escapeJs(s) {
+  return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+</script>
+
+</body>
+</html>
